@@ -4,8 +4,6 @@ const net = require('net');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
-const http2 = require('http2');
-const WebSocket = require('ws');
 
 const app = express();
 app.use(express.json());
