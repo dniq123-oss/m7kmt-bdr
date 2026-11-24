@@ -132,7 +132,12 @@ def launch(payload):
             "accounts": len(accounts), "room_id": room_id}
 
 @app.route("/")
-def health(): return "nyx alive"
+def health():
+    try:
+        with open("index.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "nyx alive (index.html not found)"
 
 @app.route("/status")
 def status():
