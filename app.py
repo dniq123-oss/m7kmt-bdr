@@ -74,11 +74,21 @@ def send_once(acc, room_id, msg):
         r = requests.post("https://webcast.tiktok.com/webcast/room/chat/",
                           data=body, headers=hdrs, timeout=8)
         acc["sent"] += 1
-        if r.status_code == 200: acc["ok"] += 1
-        else: acc["err"] += 1
-    except Exception:
+        if r.status_code == 200:
+            res = r.json()
+            if res.get("status_code") == 0:
+                acc["ok"] += 1
+                acc["last_err"] = ""
+            else:
+                acc["err"] += 1
+                acc["last_err"] = str(res.get("data", {})) if res.get("data") else str(res)
+        else:
+            acc["err"] += 1
+            acc["last_err"] = f"HTTP {r.status_code}"
+    except Exception as e:
         acc["sent"] += 1
         acc["err"] += 1
+        acc["last_err"] = str(e)
 
 def worker(acc, room_id, msg, interval):
     while not stop_flag.is_set():
