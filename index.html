@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nyx control</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "SF Pro", system-ui, sans-serif;
+    background: #0a0a0a;
+    color: #e8e8e8;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 480px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+  .sub {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  input, textarea {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #e8e8e8;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 12px;
+    transition: border 0.15s;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #4a7dff;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: #4a7dff; color: #fff; margin-bottom: 8px; }
+  .btn-danger  { background: #ff3b3b; color: #fff; margin-bottom: 8px; }
+  .btn-ghost   { background: #1e1e1e; color: #e8e8e8; border: 1px solid #2a2a2a; }
+  .row { display: flex; gap: 8px; }
+  .row button { margin-bottom: 0; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat {
+    background: #0a0a0a;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .stat .v {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .l {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+    text-transform: uppercase;
+  }
+  .stat.ok .v { color: #4ade80; }
+  .stat.err .v { color: #ff5555; }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 6px;
+    background: #444;
+  }
+  .status-dot.on { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: transform 0.25s;
+    pointer-events: none;
+    z-index: 99;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err { border-color: #ff3b3b; color: #ff5555; }
+  .toast.ok  { border-color: #4ade80; color: #4ade80; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>nyx control <span class="status-dot" id="dot"></span></h1>
+  <div class="sub" id="server">جاري الاتصال...</div>
+
+  <!-- api -->
+  <div class="card">
+    <label>عنوان السيرفر (render)</label>
+    <input id="api" placeholder="https://your-app.onrender.com" />
+    <button class="btn-ghost" onclick="saveApi()">حفظ</button>
+  </div>
+
+  <!-- stats -->
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="v" id="s-sent">0</div><div class="l">مرسل</div></div>
+      <div class="stat ok"><div class="v" id="s-ok">0</div><div class="l">نجح</div></div>
+      <div class="stat err"><div class="v" id="s-err">0</div><div class="l">فشل</div></div>
+    </div>
+    <div class="row">
+      <button class="btn-primary" id="b-start" onclick="start()">تشغيل</button>
+      <button class="btn-danger"  id="b-stop"  onclick="stop()">إيقاف</button>
+    </div>
+  </div>
+
+  <!-- message -->
+  <div class="card">
+    <label>الرسالة</label>
+    <textarea id="msg" placeholder="نص الرسالة...">nyx was here</textarea>
+    <button class="btn-ghost" onclick="updateMsg()">تحديث الرسالة</button>
+  </div>
+
+  <!-- csrf -->
+  <div class="card">
+    <label>csrf token</label>
+    <input id="csrf" placeholder="tt-csrf-token" />
+    <button class="btn-ghost" onclick="updateCsrf()">تحديث csrf</button>
+  </div>
+
+  <!-- test -->
+  <div class="card">
+    <button class="btn-ghost" onclick="once()">اختبار — رسالة واحدة</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let api = localStorage.getItem("nyx_api") || "";
+let pollTimer = null;
+
+$("api").value = api;
+
+function toast(msg, type = "ok") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast show " + type;
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.className = "toast " + type, 2200);
+}
+
+function saveApi() {
+  api = $("api").value.replace(/\/+$/, "");
+  localStorage.setItem("nyx_api", api);
+  toast("تم الحفظ");
+  refresh();
+}
+
+async function req(path, opts = {}) {
+  if (!api) throw new Error("لا يوجد عنوان سيرفر");
+  const r = await fetch(api + path, opts);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+async function refresh() {
+  if (!api) {
+    $("server").textContent = "أضف عنوان السيرفر أول";
+    $("dot").className = "status-dot";
+    return;
+  }
+  try {
+    const s = await req("/status");
+    $("dot").className = "status-dot " + (s.running ? "on" : "");
+    $("server").textContent = s.running
+      ? `يعمل — ${s.threads} threads — كل ${s.interval}s`
+      : "متوقف";
+    $("s-sent").textContent = s.sent;
+    $("s-ok").textContent   = s.ok;
+    $("s-err").textContent  = s.err;
+    $("b-start").disabled = s.running;
+    $("b-stop").disabled  = !s.running;
+    if (s.message) $("msg").value = s.message;
+  } catch (e) {
+    $("dot").className = "status-dot";
+    $("server").textContent = "فشل الاتصال — " + e.message;
+  }
+}
+
+async function start() {
+  try { await req("/start", { method: "POST" }); toast("تشغيل"); refresh(); }
+  catch (e) { toast(e.message, "err"); }
+}
+
+async function stop() {
+  try { await req("/stop", { method: "POST" }); toast("إيقاف"); refresh(); }
+  catch (e) { toast(e.message, "err"); }
+}
+
+async function updateMsg() {
+  try {
+    await req("/msg", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ msg: $("msg").value })
+    });
+    toast("تم تحديث الرسالة");
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function updateCsrf() {
+  try {
+    await req("/csrf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ csrf: $("csrf").value })
+    });
+    toast("تم تحديث csrf");
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function once() {
+  try {
+    const r = await req("/once");
+    toast("كود: " + r.code, r.code === 200 ? "ok" : "err");
+    refresh();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+refresh();
+pollTimer = setInterval(refresh, 3000);
+</script>
+</body>
+</html>
